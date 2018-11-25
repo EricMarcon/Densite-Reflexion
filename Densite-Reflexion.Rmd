@@ -1,0 +1,239 @@
+---
+title: "Densité avec Réflexion"
+author:
+  - name: Eric Marcon
+abstract: >
+  Estimation de la densité d'une distribution bornée.
+date: "`r format(Sys.time(), '%d %B %Y')`"
+pdftoc: no
+preamble: >
+  \usepackage{textcomp}
+  \DeclareUnicodeCharacter{B0}{\textdegree}
+  \hyphenation{bio-di-ver-si-ty sap-lings}
+bibliography: references.bib
+lang: french # english
+always_allow_html: yes
+output:
+  bookdown::html_document2:
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  bookdown::gitbook:
+    config:
+      download: null
+  bookdown::word_document2: default
+  bookdown::pdf_book:
+    base_format: EcoFoG::memo
+    keep_tex: yes
+---
+
+```{r Options, echo=FALSE, message=FALSE}
+### knitr and R options (packages, ...)
+knitr::opts_chunk$set(echo = TRUE, tidy=TRUE, tidy.opts=list(blank=FALSE, width.cutoff=50), out.width='.8\\maxwidth', fig.align='center')
+options(width=50)
+# Installation des packages si nécessaire et chargement
+Library <- function(Packages) {
+  InstallAndLoad <- function(Package) {
+    if (!Package %in% installed.packages()[, 1]) {install.packages(Package, repos="https://cran.rstudio.com/")}
+    require(Package, character.only = TRUE)
+  }
+  invisible(sapply(Packages, InstallAndLoad))
+}
+# Ajouter les packages nécessaires ici
+Library(c("kableExtra", "GoFKernel"))
+```
+
+
+# Problématique
+
+L'estimation de la densité d'une distribution bornée pose problème parce que la densité estimée n'est pas nulle hors des bornes.
+
+Le calcul de la densité d'une variable est réalisé par la fonction `density()` du package _stats_.
+
+L'exemple suivant estime la densité de 1000 tirages d'une loi uniforme entre 0 et 1.
+Comme l'estimation dépend principalement de la bande passante choisie, son choix est fait à ce stade.
+La bande passante optimale (voir l'aide de la fonction `bw.SJ`) selon @Sheather1991 est calculée. 
+Elle varie selon les données mais est toujours proche de 0,05 : cette valeur sera retenue par la suite pour permettre de comparer différentes méthodes.
+
+```{r}
+# Tirage de 1000 valeurs
+distribution <- runif(1000)
+# Histogramme de l adistribution
+hist(distribution)
+# Choix d'une bande passante pour l'estimation
+bw.SJ(distribution)
+bande_passante <- 0.05
+# Estimation de la densité
+d_reference <- density(distribution, bw=bande_passante)
+plot(d_reference)
+```
+
+L'estimation n'est pas nulle hors de l'intervalle $[0;1]$.
+
+
+# Solutions possibles
+
+## Censure de l'estimation
+
+La fonction `density` accepte les arguments `from`et `to` pour censurer l'estimation aux bornes choisies.
+
+```{r}
+d_censuree <- density(distribution, bw=0.05, from=0, to=1)
+plot(d_censuree)
+```
+
+L'effet des arguments `from`et `to` est simplement de supprimer les valeurs estimées hors de l'intervalle.
+
+```{r}
+plot(d_reference)
+lines(d_censuree, col="red")
+abline(v=0, lty=2)
+abline(v=1, lty=2)
+```
+
+La densité censurée (en rouge) se superpose parfaitement à la densité de référence.
+
+Cette approche n'est pas satisfaisante : les densités sont largement sous-estimées près des bornes, et la masse estimée hors des bornes est perdue ; autrement dit, la densité de probabilité de la distribution ne somme pas à 1. 
+
+
+## Estimation avec réflexion
+
+Le package _GoFKernel_ propose la fonction `density.reflected` pour estimer correctement la densité précédente.
+
+```{r}
+library("GoFKernel")
+d_GoFKernel <- density.reflected(distribution, lower = 0, upper = 1, bw = bande_passante)
+plot(d_GoFKernel)
+```
+
+### Méthode
+
+Le noyau gaussien utilisé pour l'estimation de la densité donne un poids fort aux valeurs de la distribution proches du point d'estimation.
+Le poids en fonction de la distance au point suit une loi normale dont l'écart-type est la bande passante choisie.
+
+```{r}
+# Représentation du noyau
+plot(function(x) dnorm(x, mean=0.5, sd=0.05), 0, 1)
+# moyenne +- 1 écart-type
+abline(v=0.45, lty=2)
+abline(v=0.55, lty=2)
+# moyenne +- 4 écarts-types
+abline(v=0.3)
+abline(v=0.7)
+```
+
+Au-delà de 4 écart-types, le poids des voisins est négligeable.
+
+```{r}
+# Réflexion
+a_reflechir_gauche <- which(distribution < 4*bande_passante)
+a_reflechir_droite <- which(distribution > 1-4*bande_passante)
+distribution_reflechie <- c(distribution, -distribution[a_reflechir_gauche], 2-distribution[a_reflechir_droite])
+hist(distribution_reflechie)
+abline(v=0, lty=2)
+abline(v=1, lty=2)
+abline(v=4*bande_passante, lty=2, col="red")
+abline(v=1-4*bande_passante, lty=2, col="red")
+```
+
+```{r}
+# Nouvelle estimation de la densité
+d_reflechie <- density(distribution_reflechie, bw=bande_passante)
+plot(d_reflechie, ylim=c(0,1.2))
+abline(v=0)
+abline(v=1)
+lines(d_GoFKernel, col="red")
+```
+
+```{r}
+# Filtrage de la densité dans les bornes
+d_reflechie <- density(distribution_reflechie, bw=bande_passante, from = 0, to = 1)
+# Intégrale
+(area<-sum((d_reflechie$y[-1]+d_reflechie$y[-length(d_reflechie$y)])/2 * diff(d_reflechie$x)))
+```
+
+Renormalisation
+```{r}
+d_reflechie$y <- d_reflechie$y / area
+# Vérification
+plot(d_reflechie)
+lines(d_GoFKernel, col="red")
+```
+
+### Méthode de @Duranton2005
+
+@Duranton2005 estiment la densité de probabilité de trouver un voisin en fonction de la distance à un point de référence quelconque, à partir d'une matrice de distance entre des points situés dans un espace en deux dimensions.
+La densité doit être nulle pour les distances négatives. 
+La technique des auteurs est simplement de dupliquer toutes les distances en mirroir par rapport à 0 avant l'estimation de la densité.
+L'avantage de la méthode est que le calcul de l'intégrale est inutile pour renormaliser la densité : il suffit de doubler les valeurs.
+L'inconvénient est l'ajout de calculs inutiles hors des bornes et la perte de précision de l'estimation dans les bornes : la moitié des 512 points d'estimation sont hors des bornes.
+
+La méthode peut être généralisée ici en duplicant les données à gauche et à droite:
+
+```{r}
+distribution_reflechie_DO <- c(distribution, -distribution, 2-distribution)
+hist(distribution_reflechie_DO)
+abline(v=0, lty=2)
+abline(v=1, lty=2)
+```
+
+La densité est calculée correctement, et doit être renormalisée en la multipliant par 3 (la masse des données a été triplée).
+
+```{r}
+d_DO <- density(distribution_reflechie_DO, bw=bande_passante, from = 0, to = 1)
+d_DO$y <- d_DO$y * 3
+plot(d_DO)
+```
+
+### Borne unique
+
+L'exemple suivant traite le cas d'une variable bornée d'un seul côté.
+
+```{r}
+# Tirage de 1000 valeurs
+distribution <- rgamma(1000, shape = 1, scale = 2)
+# Histogramme de l adistribution
+hist(distribution)
+# Choix d'une bande passante pour l'estimation
+bw.SJ(distribution)
+bande_passante <- 0.15
+# Estimation de la densité
+d_reference <- density(distribution, bw=bande_passante)
+plot(d_reference)
+```
+
+La densité doit être nulle pour les valeurs négatives.
+Avec le package _GoFKernel_:
+
+```{r}
+d_GoFKernel <- density.reflected(distribution, lower = 0, bw = bande_passante)
+plot(d_GoFKernel)
+```
+
+Code complet:
+
+```{r}
+# Réflexion
+a_reflechir_gauche <- which(distribution < 4*bande_passante)
+distribution_reflechie <- c(distribution, -distribution[a_reflechir_gauche])
+# Densité
+d_reflechie <- density(distribution_reflechie, bw=bande_passante, from = 0)
+# Renormalisation
+area<-sum((d_reflechie$y[-1]+d_reflechie$y[-length(d_reflechie$y)])/2 * diff(d_reflechie$x))
+d_reflechie$y <- d_reflechie$y/area
+# Figure
+plot(d_reflechie)
+```
+
+
+# Conclusion
+
+En pratique, pour estimer une densité bornée, utiliser le package _GoFKernel_ pour sa simplicité.
+
+Si la dépendance à un package n'est pas souhaitable (par exemple dans un nouveau package), l'algorithme suivant peut être utilisé :
+
+- dupliquer les données en mirroir autour de la borne, jusqu'à 4 bandes passantes de la borne ;
+
+- estimer la densité avec la fonction `density`, en censurant l'estimation aux bornes ;
+
+- calculer l'intégrale de la densité obtenue et renormaliser les densités estimées par cette intégrale.
