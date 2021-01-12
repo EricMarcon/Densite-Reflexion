@@ -8,9 +8,6 @@
 # RStudio files
 .Rproj.user/
 
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-
 # knitr and R markdown default cache directories
 /cache/
 /figure/
@@ -40,6 +37,5 @@
 # Extras
 .#Extra
 
-# Private keys
-*_rsa
-.Rproj.user
+# CI
+docs/
