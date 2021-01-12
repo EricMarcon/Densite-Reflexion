@@ -18,10 +18,6 @@ output:
     highlight: haddock
     toc: yes
     toc_float: yes
-  bookdown::gitbook:
-    config:
-      download: null
-  bookdown::word_document2: default
   bookdown::pdf_book:
     base_format: EcoFoG::memo
     keep_tex: yes

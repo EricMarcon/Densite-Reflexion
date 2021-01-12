@@ -1,0 +1,13 @@
+Package: Densite-Reflexion
+Title: Densité avec Réflexion
+Version: 1.0.0
+Authors@R: c(
+  person("Eric", "Marcon", , "e.marcon@free.fr", c("aut", "cre"))
+  )
+URL: https://github.com/EricMarcon/Densite-Reflexion
+Depends:
+  R (>= 3.1.0)
+Imports:
+  GoFKernel,
+  kableExtra
+License: GPL-3
