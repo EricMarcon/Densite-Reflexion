@@ -5,21 +5,20 @@ author:
 abstract: >
   Estimation de la densité d'une distribution bornée.
 date: "`r format(Sys.time(), '%d %B %Y')`"
-pdftoc: no
-preamble: >
-  \usepackage{textcomp}
-  \DeclareUnicodeCharacter{B0}{\textdegree}
-  \hyphenation{bio-di-ver-si-ty sap-lings}
+url: https://EricMarcon.github.io/Densite-Reflexion/
+github-repo: EricMarcon/Densite-Reflexion
 bibliography: references.bib
-lang: fr-FR # en-US
-babel: french # english
+biblio-style: chicago
+lang: fr-FR
+pdftoc: no
 always_allow_html: yes
 output:
   bookdown::pdf_book:
-    base_format: EcoFoG::memo
+    template: latex/template.tex
+    citation_package: natbib
+    latex_engine: xelatex
     keep_tex: yes
   bookdown::html_document2:
-    highlight: haddock
     toc: yes
     toc_float: yes
 ---
