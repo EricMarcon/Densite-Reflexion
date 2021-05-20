@@ -29,7 +29,6 @@
 *.toc
 *-concordance.tex
 *(busy)
-*.tex
 *.nav
 *.snm
 *.vrb
