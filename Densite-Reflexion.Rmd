@@ -13,14 +13,15 @@ lang: fr-FR
 pdftoc: no
 always_allow_html: yes
 output:
+  rmdformats::downcute:
+    use_bookdown: yes
+    lightbox: yes
+    pandoc_args: "--lua-filter=fr-nbsp.lua"
   bookdown::pdf_book:
     template: latex/template.tex
     citation_package: natbib
     latex_engine: xelatex
     keep_tex: yes
-  bookdown::html_document2:
-    toc: yes
-    toc_float: yes
 ---
 
 ```{r DoNotModify, include=FALSE}
