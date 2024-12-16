@@ -27,62 +27,58 @@ output:
 ```{r DoNotModify, include=FALSE}
 ### Utilities. Do not modify.
 # Installation of packages if necessary
-InstallPackages <- function(Packages) {
-  InstallPackage <- function(Package) {
-    if (!Package %in% installed.packages()[, 1]) {
-      install.packages(Package, repos="https://cran.rstudio.com/")
+install_packages <- function(packages) {
+  install_package <- function(package) {
+    if (!package %in% installed.packages()[, 1]) {
+      install.packages(package, repos = "https://cran.rstudio.com/")
     }
   }
-  invisible(sapply(Packages, InstallPackage))
+  invisible(sapply(packages, install_package))
 }
-
-# Basic packages
-InstallPackages(c("bookdown", "formatR", "kableExtra", "ragg"))
-
-# kableExtra must be loaded 
-if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "docx") {
-  # Word output (https://stackoverflow.com/questions/35144130/in-knitr-how-can-i-test-for-if-the-output-will-be-pdf-or-word)
-  # Do not use autoformat (https://github.com/haozhu233/kableExtra/issues/308)
-  options(kableExtra.auto_format = FALSE)
-}
-library("kableExtra")
+install_packages(c("bookdown", "formatR", "ragg"))
 
 # Chunk font size hook: allows size='small' or any valid Latex font size in chunk options
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
-knitr::knit_hooks$set(chunk = function(x, options) {
-  x <- def.chunk.hook(x, options)
-  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
-})
+knitr::knit_hooks$set(
+  chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(
+      options$size != "normalsize", 
+      paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), 
+      x
+    )
+  }
+)
 ```
 
 ```{r Options, include=FALSE}
 ### Customized options for this document
 # Add necessary packages here
-Packages <- c("tidyverse", "GoFKernel")
+packages <- c("tidyverse", "GoFKernel")
 # Install them
-InstallPackages(Packages)
+install_packages(packages)
 
 # knitr options
 knitr::opts_chunk$set(
-  cache=FALSE, # Cache chunk results
+  cache = FALSE, # Cache chunk results
   echo = TRUE, # Show/Hide R chunks
-  warning=FALSE, # Show/Hide warnings
+  warning = FALSE, # Show/Hide warnings
   # Figure alignment and size
-  fig.align='center', out.width='80%',
+  fig.align = 'center', out.width = '80%',
   # Graphic devices (ragg_png is better than standard png)
   dev = c("ragg_png", "pdf"),
   # Code chunk format
-  tidy=TRUE, tidy.opts=list(blank=FALSE, width.cutoff=50),
-  size="scriptsize", knitr.graphics.auto_pdf = TRUE
+  tidy = FALSE, tidy.opts = list(blank = FALSE, width.cutoff = 50),
+  size = "scriptsize", knitr.graphics.auto_pdf = TRUE
   )
-options(width=50)
+options(width = 50)
 
 # ggplot style
 library("tidyverse")
 theme_set(theme_bw())
-theme_update(panel.background=element_rect(fill="transparent", colour=NA),
-             plot.background=element_rect(fill="transparent", colour=NA))
-knitr::opts_chunk$set(dev.args=list(bg="transparent"))
+theme_update(panel.background = element_rect(fill = "transparent", colour = NA),
+             plot.background = element_rect(fill = "transparent", colour = NA))
+knitr::opts_chunk$set(dev.args = list(bg = "transparent"))
 
 # Random seed
 set.seed(973)
@@ -112,7 +108,7 @@ hist(distribution)
 # Choix d'une bande passante pour l'estimation
 (bande_passante <- bw.SJ(distribution))
 # Estimation de la densité
-d_reference <- density(distribution, bw=bande_passante)
+d_reference <- density(distribution, bw = bande_passante)
 plot(d_reference)
 ```
 
@@ -126,7 +122,11 @@ L'estimation n'est pas nulle hors de l'intervalle $[1, 2]$.
 La fonction `density` accepte les arguments `from`et `to` pour censurer l'estimation aux bornes choisies.
 
 ```{r}
-d_censuree <- density(distribution, bw=bande_passante, from=borne_gauche, to=borne_droite)
+d_censuree <- density(
+  distribution, 
+  bw = bande_passante, 
+  from = borne_gauche, to = borne_droite
+)
 plot(d_censuree)
 ```
 
@@ -134,9 +134,9 @@ L'effet des arguments `from`et `to` est simplement de supprimer les valeurs esti
 
 ```{r}
 plot(d_reference)
-lines(d_censuree, col="red")
-abline(v=borne_gauche, lty=2)
-abline(v=borne_droite, lty=2)
+lines(d_censuree, col = "red")
+abline(v=borne_gauche, lty = 2)
+abline(v=borne_droite, lty = 2)
 ```
 
 La densité censurée (en rouge) se superpose parfaitement à la densité de référence.
@@ -150,7 +150,12 @@ Le package _GoFKernel_ [@Pavia2015] propose la fonction `density.reflected` pour
 
 ```{r}
 library("GoFKernel")
-d_GoFKernel <- density.reflected(distribution, lower = borne_gauche, upper = borne_droite, bw = bande_passante)
+d_GoFKernel <- density.reflected(
+  distribution, 
+  lower = borne_gauche, 
+  upper = borne_droite, 
+  bw = bande_passante
+)
 plot(d_GoFKernel)
 ```
 
@@ -164,13 +169,13 @@ Le poids en fonction de la distance au point suit une loi normale dont l'écart-
 
 ```{r}
 # Représentation du noyau
-plot(function(x) dnorm(x, mean=1.5, sd=0.05), 1, 2)
+plot(function(x) dnorm(x, mean = 1.5, sd = 0.05), from  = 1, to = 2)
 # moyenne +- 2 écart-type
-abline(v=1.4, lty=2)
-abline(v=1.6, lty=2)
+abline(v = 1.4, lty = 2)
+abline(v = 1.6, lty = 2)
 # moyenne +- 4 écarts-types
-abline(v=1.3)
-abline(v=1.7)
+abline(v = 1.3)
+abline(v = 1.7)
 ```
 
 La figure représente le poids des points observés entre 1 et 2 pour l'estimation de la densité au point 1,5 dans un noyau gaussien d'écart-type (bande passante) égal à 0,05.
@@ -184,12 +189,16 @@ L'estimation près des bornes utilise les données mises en miroir : comme leur 
 # Réflexion
 a_reflechir_gauche <- which(distribution < 4*bande_passante + borne_gauche)
 a_reflechir_droite <- which(distribution > borne_droite - 4*bande_passante)
-distribution_reflechie <- c(distribution, 2*borne_gauche-distribution[a_reflechir_gauche], 2*borne_droite-distribution[a_reflechir_droite])
+distribution_reflechie <- c(
+  distribution, 
+  2 * borne_gauche - distribution[a_reflechir_gauche], 
+  2 * borne_droite-distribution[a_reflechir_droite]
+)
 hist(distribution_reflechie)
-abline(v=borne_gauche, lty=2)
-abline(v=borne_droite, lty=2)
-abline(v=4*bande_passante + borne_gauche, lty=2, col="red")
-abline(v=borne_droite - 4*bande_passante, lty=2, col="red")
+abline(v = borne_gauche, lty = 2)
+abline(v = borne_droite, lty = 2)
+abline(v = 4 * bande_passante + borne_gauche, lty = 2, col = "red")
+abline(v = borne_droite - 4 * bande_passante, lty = 2, col = "red")
 ```
 
 L'histogramme des données complétées montre la réplication des données autour des bornes (limites verticales noires), limitées à 4 bandes passantes (limites verticales rouges).
@@ -199,10 +208,10 @@ La nouvelle estimation de la densité (en noir) est presque identique à celle d
 ```{r}
 # Nouvelle estimation de la densité
 d_reflechie <- density(distribution_reflechie, bw=bande_passante)
-plot(d_reflechie, ylim=c(0,1.2))
-abline(v=borne_gauche)
-abline(v=borne_droite)
-lines(d_GoFKernel, col="red")
+plot(d_reflechie, ylim = c(0,1.2))
+abline(v = borne_gauche)
+abline(v = borne_droite)
+lines(d_GoFKernel, col = "red")
 ```
 
 Il reste donc à censurer l'estimation aux bornes et à la renormaliser pour qu'elle somme à 1.
@@ -210,9 +219,18 @@ L'intégrale de la densité censurée est calculée en multipliant la valeur moy
 
 ```{r}
 # Filtrage de la densité dans les bornes
-d_reflechie <- density(distribution_reflechie, bw=bande_passante, from = borne_gauche, to = borne_droite)
+d_reflechie <- density(
+  distribution_reflechie, 
+  bw = bande_passante, 
+  from = borne_gauche, 
+  to = borne_droite
+)
 # Intégrale de la densité censurée
-(integrale <- sum((d_reflechie$y[-1]+d_reflechie$y[-length(d_reflechie$y)])/2 * diff(d_reflechie$x)))
+(integrale <- sum(
+  (d_reflechie$y[-1] + d_reflechie$y[-length(d_reflechie$y)]) /
+  2 * diff(d_reflechie$x)
+))
+
 ```
 
 La renormalisation consiste simplement à diviser toutes les valeurs estimées par l'intégrale.
@@ -221,7 +239,7 @@ La renormalisation consiste simplement à diviser toutes les valeurs estimées p
 d_reflechie$y <- d_reflechie$y / integrale
 # Vérification
 plot(d_reflechie)
-lines(d_GoFKernel, col="red")
+lines(d_GoFKernel, col = "red")
 ```
 
 La densité estimée est maintenant celle de `density.reflected`.
@@ -243,7 +261,7 @@ hist(distribution_gamma)
 bw.SJ(distribution_gamma)
 bande_passante_gamma <- 0.15
 # Estimation de la densité
-d_reference <- density(distribution_gamma, bw=bande_passante_gamma)
+d_reference <- density(distribution_gamma, bw = bande_passante_gamma)
 plot(d_reference)
 ```
 
@@ -251,7 +269,11 @@ La densité doit être nulle pour les valeurs négatives.
 Avec le package _GoFKernel_, seul le paramètre `lower` doit être précisé.
 
 ```{r}
-d_GoFKernel <- density.reflected(distribution_gamma, lower = borne_gauche, bw = bande_passante_gamma)
+d_GoFKernel <- density.reflected(
+  distribution_gamma, 
+  lower = borne_gauche, 
+  bw = bande_passante_gamma
+)
 plot(d_GoFKernel)
 ```
 
@@ -259,13 +281,25 @@ Le code complet pour obtenir cette estimation est le suivant :
 
 ```{r}
 # Réflexion
-a_reflechir_gauche <- which(distribution_gamma < 4*bande_passante_gamma + borne_gauche)
-distribution_reflechie <- c(distribution_gamma, 2*borne_gauche - distribution_gamma[a_reflechir_gauche])
+a_reflechir_gauche <- which(
+  distribution_gamma < 4 * bande_passante_gamma + borne_gauche
+)
+distribution_reflechie <- c(
+  distribution_gamma, 
+  2 * borne_gauche - distribution_gamma[a_reflechir_gauche]
+)
 # Densité
-d_reflechie <- density(distribution_reflechie, bw=bande_passante_gamma, from = borne_gauche)
+d_reflechie <- density(
+  distribution_reflechie, 
+  bw = bande_passante_gamma, 
+  from = borne_gauche
+)
 # Renormalisation
-integrale <- sum((d_reflechie$y[-1]+d_reflechie$y[-length(d_reflechie$y)])/2 * diff(d_reflechie$x))
-d_reflechie$y <- d_reflechie$y/integrale
+integrale <- sum(
+  (d_reflechie$y[-1] + d_reflechie$y[-length(d_reflechie$y)]) /
+  2 * diff(d_reflechie$x)
+)
+d_reflechie$y <- d_reflechie$y / integrale
 # Figure
 plot(d_reflechie)
 ```
@@ -286,18 +320,27 @@ La méthode peut être généralisée ici en dupliquant les données à gauche e
 borne_gauche <- 1
 borne_droite <- 2
 # Réflexion de toutes les données, à gauche et à droite
-distribution_reflechie_DO <- c(distribution, 2*borne_gauche-distribution, 2*borne_droite-distribution)
+distribution_reflechie_DO <- c(
+  distribution, 
+  2 * borne_gauche - distribution, 
+  2 * borne_droite - distribution
+)
 # Histogramme
 hist(distribution_reflechie_DO)
-abline(v=borne_gauche, lty=2)
-abline(v=borne_droite, lty=2)
+abline(v = borne_gauche, lty = 2)
+abline(v = borne_droite, lty = 2)
 ```
 
 La densité est calculée correctement, et doit être renormalisée en la multipliant par 3 (la masse des données a été triplée) :
 
 ```{r}
 # Densité censurée
-d_DO <- density(distribution_reflechie_DO, bw=bande_passante, from = borne_gauche, to = borne_droite)
+d_DO <- density(
+  distribution_reflechie_DO, 
+  bw = bande_passante, 
+  from = borne_gauche, 
+  to = borne_droite
+)
 # Renormalisation
 d_DO$y <- d_DO$y * 3
 # Vérification
@@ -305,9 +348,23 @@ plot(d_DO)
 ```
 
 
+## ggplot
+
+Avec _ggplot2_, l'argument `bounds` de `geom_density()` permet de borner l’estimation de la densité.
+
+```{r}
+library("tidyverse")
+distribution %>% 
+  as_tibble %>% 
+  ggplot() + 
+  geom_density(aes(x = value), bounds = c(borne_gauche, borne_droite)) +
+  geom_vline(xintercept = c(borne_gauche, borne_droite), lty = 2)
+```
+
 # Conclusion
 
 En pratique, pour estimer une densité bornée, utiliser le package _GoFKernel_ pour sa simplicité.
+Pour une simple représentation graphique, utiliser _ggplot2_.
 
 Si la dépendance à un package n'est pas souhaitable (par exemple dans un nouveau package), l'algorithme suivant peut être utilisé :
 
@@ -320,24 +377,36 @@ borne_droite <- 2
 # Choix d'une bande passante pour l'estimation
 bande_passante <- bw.SJ(distribution)
 # Réflexion
-a_reflechir_gauche <- which(distribution < 4*bande_passante + borne_gauche)
-a_reflechir_droite <- which(distribution > borne_droite - 4*bande_passante)
-distribution_reflechie <- c(distribution, 2*borne_gauche-distribution[a_reflechir_gauche], 2*borne_droite-distribution[a_reflechir_droite])
+a_reflechir_gauche <- which(distribution < 4 * bande_passante + borne_gauche)
+a_reflechir_droite <- which(distribution > borne_droite - 4 * bande_passante)
+distribution_reflechie <- c(
+  distribution, 
+  2 * borne_gauche - distribution[a_reflechir_gauche],
+  2 * borne_droite - distribution[a_reflechir_droite]
+)
 ```
 
 - estimer la densité avec la fonction `density`, en censurant l'estimation aux bornes ;
 
 ```{r}
 # Densité. Bande passante par défaut.
-d_reflechie <- density(distribution_reflechie, bw = bande_passante, from = borne_gauche, to = borne_droite)
+d_reflechie <- density(
+  distribution_reflechie, 
+  bw = bande_passante, 
+  from = borne_gauche, 
+  to = borne_droite
+)
 ```
 
 - calculer l'intégrale de la densité obtenue et renormaliser les densités estimées par cette intégrale.
 
 ```{r}
 # Renormalisation
-integrale <- sum((d_reflechie$y[-1]+d_reflechie$y[-length(d_reflechie$y)])/2 * diff(d_reflechie$x))
-d_reflechie$y <- d_reflechie$y/integrale
+integrale <- sum(
+  (d_reflechie$y[-1] + d_reflechie$y[-length(d_reflechie$y)]) /
+    2 * diff(d_reflechie$x)
+)
+d_reflechie$y <- d_reflechie$y / integrale
 # Figure
 plot(d_reflechie)
 ```
